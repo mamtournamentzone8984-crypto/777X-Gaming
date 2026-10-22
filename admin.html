@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>777X Gaming Admin Panel</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#09090d;color:white;font-family:Arial,sans-serif}
+header{padding:20px;text-align:center;background:#111;border-bottom:2px solid #ff1738}
+header h1{color:#ff1738;margin:0}
+main{max-width:1000px;margin:auto;padding:15px}
+section{background:#15151d;padding:17px;border:1px solid #333;border-radius:10px;margin:15px 0}
+h2{color:#ff1738}
+input,select,textarea{width:100%;padding:12px;margin:8px 0;background:#09090d;color:white;border:1px solid #444;border-radius:6px}
+button{background:#ff1738;color:white;border:0;padding:10px 14px;margin:4px;border-radius:6px;cursor:pointer;font-weight:bold}
+.card{padding:13px;margin:10px 0;background:#0b0b12;border:1px solid #444;border-radius:8px;overflow-wrap:anywhere}
+.hidden{display:none!important}
+.small{color:#bbb;font-size:13px}
+#message{white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header>
+<h1>777X GAMING</h1>
+<p>ADMIN CONTROL PANEL</p>
+</header>
+
+<main>
+<p id="message"></p>
+
+<section id="loginBox">
+<h2>🔐 Admin Login</h2>
+<input id="email" type="email" placeholder="Admin Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</section>
+
+<div id="panel" class="hidden">
+<button onclick="logout()">Logout</button>
+
+<section>
+<h2>🏆 Create Tournament</h2>
+<input id="tTitle" placeholder="Tournament Name">
+<select id="tMode">
+<option value="Solo">Solo</option>
+<option value="Duo">Duo</option>
+<option value="Squad">Squad</option>
+</select>
+<input id="tFee" type="number" min="0" placeholder="Entry Fee (৳)">
+<input id="tPrize" type="number" min="0" placeholder="Prize Pool (৳)">
+<input id="tDate" type="datetime-local">
+<textarea id="tDescription" placeholder="Tournament Details"></textarea>
+<button onclick="createTournament()">Create Tournament</button>
+</section>
+
+<section>
+<h2>📋 Tournament Management</h2>
+<button onclick="loadTournaments()">Refresh</button>
+<div id="tournaments"></div>
+</section>
+
+<section>
+<h2>💎 Add Diamond Package</h2>
+<input id="pTitle" placeholder="Package Name">
+<select id="pCategory">
+<option value="UID Top-Up">UID Top-Up</option>
+<option value="Weekly">Weekly Membership</option>
+<option value="Monthly">Monthly Membership</option>
+</select>
+<input id="pDiamonds" type="number" min="1" placeholder="Diamond Quantity (Membership হলে ফাঁকা)">
+<input id="pPrice" type="number" min="0" placeholder="Price (৳)">
+<textarea id="pDescription" placeholder="Package Details"></textarea>
+<button onclick="createPackage()">Add Package</button>
+</section>
+
+<section>
+<h2>💎 Package Management</h2>
+<button onclick="loadPackages()">Refresh</button>
+<div id="packages"></div>
+</section>
+
+<section>
+<h2>📦 Player Orders</h2>
+<button onclick="loadOrders()">Refresh Orders</button>
+<div id="orders"></div>
+</section>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://srtrzhsgclaakuknests.supabase.co";
+const SUPABASE_KEY="sb_publishable_j4hCa56Lmq4QboUuFq3xKA_LFFM3K1w";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const $=id=>document.getElementById(id);
+
+function say(text){$("message").textContent=text;}
+
+function safe(text){
+  return String(text??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+async function checkAdmin(){
+  const {data:{user}}=await db.auth.getUser();
+
+  if(!user){
+    $("loginBox").classList.remove("hidden");
+    $("panel").classList.add("hidden");
+    return;
+  }
+
+  const {data,error}=await db.from("admins")
+    .select("user_id")
+    .eq("user_id",user.id)
+    .maybeSingle();
+
+  if(error){
+    say("Admin check error: "+error.message);
+    return;
+  }
+
+  if(!data){
+    $("panel").classList.add("hidden");
+    $("loginBox").classList.remove("hidden");
+    say("এই অ্যাকাউন্টটি Admin হিসেবে অনুমোদিত নয়।");
+    return;
+  }
+
+  $("loginBox").classList.add("hidden");
+  $("panel").classList.remove("hidden");
+  say("Admin Login Successful.");
+
+  await Promise.all([
+    loadTournaments(),
+    loadPackages(),
+    loadOrders()
+  ]);
+}
+
+async function login(){
+  const email=$("email").value.trim();
+  const password=$("password").value;
+
+  if(!email||!password)return say("Email ও Password দাও।");
+
+  const {error}=await db.auth.signInWithPassword({email,password});
+
+  if(error)return say("Login Error: "+error.message);
+
+  await checkAdmin();
+}
+
+async function logout(){
+  await db.auth.signOut();
+  $("panel").classList.add("hidden");
+  $("loginBox").classList.remove("hidden");
+  say("Logout Successful.");
+}
+
+async function createTournament(){
+  const title=$("tTitle").value.trim();
+  const fee=$("tFee").value;
+  const prize=$("tPrize").value;
+
+  if(!title||fee===""||prize===""){
+    return say("Tournament Name, Entry Fee ও Prize Pool পূরণ করো।");
+  }
+
+  if(Number(fee)<0||Number(prize)<0){
+    return say("টাকার পরিমাণ শূন্য বা তার বেশি হতে হবে।");
+  }
+
+  const date=$("tDate").value;
+
+  const payload={
+    title:title,
+    game:"Free Fire",
+    mode:$("tMode").value,
+    entry_fee:Number(fee),
+    prize_pool:Number(prize),
+    tournament_date:date?new Date(date).toISOString():null,
+    description:$("tDescription").value.trim(),
+    status:"Open"
+  };
+
+  const {error}=await db.from("tournaments").insert(payload);
+
+  if(error)return say("Tournament Error: "+error.message);
+
+  say("Tournament তৈরি হয়েছে!");
+  $("tTitle").value="";
+  $("tFee").value="";
+  $("tPrize").value="";
+  $("tDate").value="";
+  $("tDescription").value="";
+
+  loadTournaments();
+}
+
+async function loadTournaments(){
+  const box=$("tournaments");
+  box.textContent="Loading...";
+
+  const {data,error}=await db.from("tournaments")
+    .select("*").order("created_at",{ascending:false});
+
+  if(error){box.textContent=error.message;return;}
+
+  box.innerHTML="";
+
+  if(!data.length){
+    box.textContent="এখনো কোনো Tournament নেই।";
+    return;
+  }
+
+  data.forEach(t=>{
+    const card=document.createElement("div");
+    card.className="card";
+
+    card.innerHTML=`
+      <h3>${safe(t.title)}</h3>
+      <p>Mode: ${safe(t.mode)}</p>
+      <p>Entry Fee: ৳${safe(t.entry_fee)} | Prize: ৳${safe(t.prize_pool)}</p>
+      <p>Status: ${safe(t.status)}</p>
+      <select id="ts${t.id}">
+        <option>Open</option><option>Full</option>
+        <option>Started</option><option>Completed</option>
+        <option>Cancelled</option>
+      </select>
+      <button onclick="updateTournament(${Number(t.id)})">Update Status</button>
+      <button onclick="deleteTournament(${Number(t.id)})">Delete</button>
+    `;
+
+    box.appendChild(card);
+    $("ts"+t.id).value=t.status;
+  });
+}
+
+async function updateTournament(id){
+  const status=$("ts"+id).value;
+
+  const {error}=await db.from("tournaments")
+    .update({status}).eq("id",id);
+
+  if(error)return say("Update Error: "+error.message);
+
+  say("Tournament Status Updated.");
+  loadTournaments();
+}
+
+async function deleteTournament(id){
+  if(!confirm("এই Tournament মুছে ফেলতে চাও?"))return;
+
+  const {error}=await db.from("tournaments").delete().eq("id",id);
+
+  if(error)return say("Delete Error: "+error.message);
+
+  say("Tournament মুছে ফেলা হয়েছে।");
+  loadTournaments();
+}
+
+async function createPackage(){
+  const title=$("pTitle").value.trim();
+  const price=$("pPrice").value;
+  const diamonds=$("pDiamonds").value;
+
+  if(!title||price===""){
+    return say("Package Name ও Price পূরণ করো।");
+  }
+
+  if(Number(price)<0){
+    return say("Price শূন্য বা তার বেশি হতে হবে।");
+  }
+
+  const payload={
+    title,
+    category:$("pCategory").value,
+    diamonds:diamonds?Number(diamonds):null,
+    price:Number(price),
+    description:$("pDescription").value.trim(),
+    active:true
+  };
+
+  const {error}=await db.from("diamond_packages").insert(payload);
+
+  if(error)return say("Package Error: "+error.message);
+
+  say("Diamond Package যোগ হয়েছে!");
+  $("pTitle").value="";
+  $("pPrice").value="";
+  $("pDiamonds").value="";
+  $("pDescription").value="";
+
+  loadPackages();
+}
+
+async function loadPackages(){
+  const box=$("packages");
+  box.textContent="Loading...";
+
+  const {data,error}=await db.from("diamond_packages")
+    .select("*").order("created_at",{ascending:false});
+
+  if(error){box.textContent=error.message;return;}
+
+  box.innerHTML="";
+
+  if(!data.length){
+    box.textContent="এখনো কোনো Package নেই।";
+    return;
+  }
+
+  data.forEach(p=>{
+    const card=document.createElement("div");
+    card.className="card";
+
+    card.innerHTML=`
+      <h3>${safe(p.title)}</h3>
+      <p>${safe(p.category)} | ৳${safe(p.price)}</p>
+      <p>Diamonds: ${safe(p.diamonds??"Membership")}</p>
+      <p>Active: ${p.active?"Yes":"No"}</p>
+      <button onclick="editPackage(${Number(p.id)})">Edit Price</button>
+      <button onclick="togglePackage(${Number(p.id)},${Boolean(p.active)})">
+        ${p.active?"Deactivate":"Activate"}
+      </button>
+      <button onclick="deletePackage(${Number(p.id)})">Delete</button>
+    `;
+
+    box.appendChild(card);
+  });
+}
+
+async function editPackage(id){
+  const {data:p,error:readError}=await db.from("diamond_packages")
+    .select("price,diamonds").eq("id",id).single();
+
+  if(readError)return say(readError.message);
+
+  const value=prompt("নতুন Package Price:",p.price);
+  if(value===null)return;
+
+  if(value.trim()===""||!Number.isFinite(Number(value))||Number(value)<0){
+    return say("সঠিক Price দাও।");
+  }
+
+  const {error}=await db.from("diamond_packages")
+    .update({price:Number(value)}).eq("id",id);
+
+  if(error)return say("Price Update Error: "+error.message);
+
+  say("Package Price পরিবর্তন হয়েছে।");
+  loadPackages();
+}
+
+async function togglePackage(id,active){
+  const {error}=await db.from("diamond_packages")
+    .update({active:!active}).eq("id",id);
+
+  if(error)return say(error.message);
+
+  loadPackages();
+}
+
+async function deletePackage(id){
+  if(!confirm("এই Package মুছে ফেলতে চাও?"))return;
+
+  const {error}=await db.from("diamond_packages")
+    .delete().eq("id",id);
+
+  if(error)return say("Delete Error: "+error.message);
+
+  say("Package মুছে ফেলা হয়েছে।");
+  loadPackages();
+}
+
+async function loadOrders(){
+  const box=$("orders");
+  box.textContent="Loading...";
+
+  const {data,error}=await db.from("orders")
+    .select("*").order("created_at",{ascending:false});
+
+  if(error){
+    box.textContent="Orders Error: "+error.message;
+    return;
+  }
+
+  box.innerHTML="";
+
+  if(!data.length){
+    box.textContent="এখনো কোনো Order নেই।";
+    return;
+  }
+
+  data.forEach(o=>{
+    const card=document.createElement("div");
+    card.className="card";
+
+    card.innerHTML=`
+      <h3>Order #${safe(o.id)} — ৳${safe(o.amount)}</h3>
+      <p>User ID: ${safe(o.user_id)}</p>
+      <p>Free Fire UID: ${safe(o.player_uid)}</p>
+      <p>Payment: ${safe(o.payment_method)}</p>
+      <p>Transaction ID: ${safe(o.transaction_id)}</p>
+      <p>Current Status: ${safe(o.status)}</p>
+      <select id="os${o.id}">
+        <option>Pending</option><option>Verified</option>
+        <option>Processing</option><option>Completed</option>
+        <option>Rejected</option>
+      </select>
+      <button onclick="updateOrder(${Number(o.id)})">Update Order</button>
+    `;
+
+    box.appendChild(card);
+    $("os"+o.id).value=o.status;
+  });
+}
+
+async function updateOrder(id){
+  const status=$("os"+id).value;
+
+  const {error}=await db.from("orders")
+    .update({status}).eq("id",id);
+
+  if(error)return say("Order Update Error: "+error.message);
+
+  say("Order Status Updated.");
+  loadOrders();
+}
+
+db.auth.onAuthStateChange(()=>setTimeout(checkAdmin,0));
+checkAdmin();
+</script>
+</body>
+</html>
