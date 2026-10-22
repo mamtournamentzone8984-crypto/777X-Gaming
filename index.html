@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="777X Gaming - Free Fire Tournament and Diamond Top-Up">
+  <title>777X Gaming | Tournament & Diamond Top-Up</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #080808;
+      --card: #151515;
+      --red: #ff2638;
+      --white: #ffffff;
+      --muted: #b6b6b6;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      line-height: 1.6;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 5%;
+      background: #101010;
+      border-bottom: 1px solid #292929;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 1px;
+    }
+
+    .logo span {
+      color: white;
+    }
+
+    .login-btn, .primary-btn {
+      background: var(--red);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 65px 20px;
+      background: radial-gradient(ellipse at top, #421018, #080808 70%);
+    }
+
+    .hero h1 {
+      font-size: clamp(35px, 8vw, 58px);
+      line-height: 1.2;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 span {
+      color: var(--red);
+    }
+
+    .hero p {
+      max-width: 550px;
+      margin: 0 auto 25px;
+      color: #d1d1d1;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .secondary-btn {
+      border: 1px solid var(--red);
+      color: white;
+      padding: 9px 15px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .section {
+      padding: 35px 5%;
+    }
+
+    .section-title {
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+
+    .section-title span {
+      color: var(--red);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 22px;
+      transition: transform .2s, border-color .2s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--red);
+    }
+
+    .icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .card h3 {
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .tag {
+      display: inline-block;
+      color: #ff6976;
+      background: #361016;
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .notice {
+      background: #181010;
+      border: 1px solid #482027;
+      padding: 18px;
+      border-radius: 12px;
+      color: #ddd;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px 15px;
+      border-top: 1px solid #292929;
+      color: #aaa;
+      font-size: 13px;
+    }
+
+    footer strong {
+      color: var(--red);
+    }
+
+    @media (max-width: 480px) {
+      header {
+        padding: 12px 4%;
+      }
+
+      .logo {
+        font-size: 21px;
+      }
+
+      .login-btn {
+        padding: 8px 11px;
+      }
+
+      .section {
+        padding: 28px 4%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">777X<span> GAMING</span></div>
+    <a class="login-btn" href="#account">Login / Register</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>WELCOME TO<br><span>777X GAMING</span></h1>
+      <p>
+        Join tournaments, compete with other players and explore
+        Free Fire diamond top-up packages from one place.
+      </p>
+
+      <div class="buttons">
+        <a class="primary-btn" href="#tournaments">🏆 Tournaments</a>
+        <a class="secondary-btn" href="#topup">💎 Diamond Top-Up</a>
+      </div>
+    </section>
+
+    <section class="section" id="tournaments">
+      <h2 class="section-title">🏆 <span>Tournaments</span></h2>
+
+      <div class="grid">
+        <article class="card">
+          <div class="icon">🎯</div>
+          <span class="tag">FREE ENTRY</span>
+          <h3>Free Fire Solo</h3>
+          <p>Solo tournament. Check the schedule and rules before joining.</p>
+          <button class="primary-btn" onclick="showNotice()">
+            View Details
+          </button>
+        </article>
+
+        <article class="card">
+          <div class="icon">⚔️</div>
+          <span class="tag">DUO MATCH</span>
+          <h3>Free Fire Duo</h3>
+          <p>Team up with a partner and compete against other players.</p>
+          <button class="primary-btn" onclick="showNotice()">
+            View Details
+          </button>
+        </article>
+
+        <article class="card">
+          <div class="icon">🛡️</div>
+          <span class="tag">SQUAD MATCH</span>
+          <h3>Free Fire Squad</h3>
+          <p>Bring your squad together and get ready for the battle.</p>
+          <button class="primary-btn" onclick="showNotice()">
+            View Details
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="topup">
+      <h2 class="section-title">💎 Diamond <span>Top-Up</span></h2>
+
+      <div class="grid">
+        <article class="card">
+          <div class="icon">💎</div>
+          <h3>Diamond Packages</h3>
+          <p>Explore packages and confirm the price before placing an order.</p>
+          <button class="primary-btn" onclick="showNotice()">
+            View Packages
+          </button>
+        </article>
+
+        <article class="card">
+          <div class="icon">💳</div>
+          <h3>bKash & Nagad</h3>
+          <p>Payment instructions will be provided when the order system is ready.</p>
+          <button class="primary-btn" onclick="showNotice()">
+            Order Information
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="account">
+      <h2 class="section-title">👤 Player <span>Account</span></h2>
+
+      <div class="notice">
+        <h3>Welcome to 777X Gaming!</h3>
+        <p>
+          Player registration, login, tournament joining and order tracking
+          will be connected to the database in the next development step.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>777X GAMING</strong> — Play • Compete • Conquer</p>
+    <p>© <span id="year"></span> 777X Gaming. All rights reserved.</p>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+    function showNotice() {
+      alert(
+        "777X Gaming: এই ফিচারটি চালু করতে পরবর্তী ধাপে ডেটাবেস ও অ্যাডমিন প্যানেল যুক্ত করতে হবে।"
+      );
+    }
+  </script>
+</body>
+</html>
